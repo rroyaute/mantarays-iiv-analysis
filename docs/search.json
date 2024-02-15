@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "outputs/quarto/index.html",
+    "href": "outputs/quarto/index.html",
+    "title": "rapport quarto",
+    "section": "",
+    "text": "image\n\n\n\\(equation = equation\\)\n\n# Block de code\n\n# Piocher 10,000 valeur dans une loi normale et visualiser la distribution\nhist(rnorm(n = 1e4, mean = 10, sd = 1))"
+  },
+  {
+    "objectID": "outputs/quarto/index.html#titre-1",
+    "href": "outputs/quarto/index.html#titre-1",
+    "title": "rapport quarto",
+    "section": "",
+    "text": "image\n\n\n\\(equation = equation\\)\n\n# Block de code\n\n# Piocher 10,000 valeur dans une loi normale et visualiser la distribution\nhist(rnorm(n = 1e4, mean = 10, sd = 1))"
+  }
+]
