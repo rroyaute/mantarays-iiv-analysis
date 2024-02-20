@@ -30,7 +30,7 @@ str(Data)
 Data2=Data[Data$group_size==Data$group_size,]
 Data$no_mantas_sc = as.numeric(scale(Data$no_mantas))
 
-# 1. Toy analyses ----
+# 1. Position in group analysis ----
 ## 1.1 Frequentist models ----
 # Position in group
 GLMM.pos=glmer(position~sex_f+size+maturity+
@@ -294,9 +294,9 @@ plot.Vi
 
 ggsave(filename = "outputs/quarto/img/plot.Vi.jpeg", plot.Vi)
 
-## 2. Compare variance by groups ----
-### 2.1 Sexes ----
-### 2.1.1 Binomial glmm ----
+## 1.3 Compare variance by groups ----
+### 1.3.1 Sexes ----
+#### 1.3.1.1 Binomial glmm ----
 bf.bin.s = bf(position | trials(group_size) ~ 
                 size + maturity + plankton + 
                 shark_bite + anthropogenic + no_mantas_sc +
@@ -353,7 +353,7 @@ delta %>%
   scale_fill_wsj() +
   theme_bw()
 
-### 2.1.1 CLMM ----
+#### 1.3.1.2 CLMM ----
 bf.clmm.s = bf(position ~ 
                  size + maturity + plankton + 
                  shark_bite + anthropogenic + no_mantas_sc +
@@ -411,4 +411,183 @@ delta %>%
   theme_bw()
 describe_posterior(delta$delta_Vi)
 
+
+
+
+# 2. Leading/following the group ----
+GLMM.lead=glmer(leader~sex_f+size+maturity+shark_bite+anthropogenic+
+                  (1|Id), 
+                family = "binomial",
+                   Data)
+summary(GLMM.lead)
+plot(allEffects(GLMM.lead))
+
+check_model(GLMM.lead)
+
+r2_nakagawa(GLMM.lead, ci = T)
+icc(GLMM.lead, ci = T)
+
+
+## 2.1 Compare variance by groups ----
+### 2.1.1 Sexes ----
+# GLMM.lead.f=glmer(leader~size+maturity+shark_bite+anthropogenic+
+#                     (1|id), 
+#                   family = "binomial",
+#                   subset(Data, sex_f == "F"))
+# GLMM.lead.m=glmer(leader~size+maturity+shark_bite+anthropogenic+
+#                     (1|id), 
+#                   family = "binomial",
+#                   subset(Data, sex_f == "M"))
+# summary(GLMM.lead.f); summary(GLMM.lead.m)
+# plot(allEffects(GLMM.lead.f)); plot(allEffects(GLMM.lead.m))
+ 
+# Converting size to numeric to avoid convergence issues
+Data$size_n = as.numeric(Data$size)
+
+GLMM.lead.f=glmer(leader~size_n+maturity+shark_bite+anthropogenic+
+                  (1|id), 
+                family = "binomial",
+                subset(Data, sex_f == "F"))
+GLMM.lead.m=glmer(leader~size_n+maturity+shark_bite+anthropogenic+
+                    (1|id), 
+                  family = "binomial",
+                  subset(Data, sex_f == "M"))
+
+summary(GLMM.lead.f); summary(GLMM.lead.m)
+plot(allEffects(GLMM.lead.f)); plot(allEffects(GLMM.lead.m))
+
+
+rpt.R.f = rpt(formula = leader~size_n+maturity+shark_bite+anthropogenic+
+                (1|id),  
+              grname = "id", 
+              datatype = "Binary", 
+              data = subset(Data, sex_f == "F"))
+rpt.R.m = rpt(formula = leader~size_n+maturity+shark_bite+anthropogenic+
+                (1|id),  
+              grname = "id", 
+              datatype = "Binary", 
+              data = subset(Data, sex_f == "M"))
+
+saveRDS(rpt.R.f, here("outputs/mods/rpt.R.f.bin.rds"))
+saveRDS(rpt.R.m, here("outputs/mods/rpt.R.m.bin.rds"))
+
+# All variance components
+rpt.V.f <- rpt(formula = leader~size_n+maturity+shark_bite+anthropogenic+
+                 (1|id),  
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = c("Binary"), 
+               data = subset(Data, sex_f == "F"),
+               ratio = FALSE)
+rpt.V.m <- rpt(formula = leader~size_n+maturity+shark_bite+anthropogenic+
+                 (1|id),  
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = "Binary", 
+               data = subset(Data, sex_f == "M"),
+               ratio = FALSE)
+
+saveRDS(rpt.V.f, here("outputs/mods/rpt.V.f.bin.rds"))
+saveRDS(rpt.V.m, here("outputs/mods/rpt.V.m.bin.rds"))
+
+# Store all vectors of bootstrapped values
+# Load models
+rpt.R.f = read_rds(here("outputs/mods/rpt.R.f.bin.rds"))
+rpt.R.m = read_rds(here("outputs/mods/rpt.R.m.bin.rds"))
+rpt.V.f = read_rds(here("outputs/mods/rpt.V.f.bin.rds"))
+rpt.V.m = read_rds(here("outputs/mods/rpt.V.m.bin.rds"))
+
+plot(rpt.R.f)
+plot(rpt.R.m)
+plot(rpt.V.f)
+plot(rpt.V.m)
+
+
+Vi_f <- rpt.V.f$R_boot_link$id
+Vi_m <- rpt.V.m$R_boot_link$id
+Vfe_f <- rpt.V.f$R_boot_link$Fixed
+Vfe_m <- rpt.V.m$R_boot_link$Fixed
+VR_f <- rpt.V.f$R_boot_link$Residual
+VR_m <- rpt.V.m$R_boot_link$Residual
+R_f <- rpt.R.f$R_boot_link$id
+R_m <- rpt.R.m$R_boot_link$id
+
+df <- data.frame(Vi = c(Vi_f, Vi_m),
+                 Vfe = c(Vfe_f, Vfe_m),
+                 VR = c(VR_f, VR_m),
+                 R = c(R_f, R_m),
+                 Sex = c(rep("F", length(Vi_f)),
+                         rep("M", length(Vi_m))))
+
+# Store effect sizes
+df.2  <- data.frame(delta_Vi = Vi_f - Vi_m,
+                    delta_Vfe = Vfe_f - Vfe_m,
+                    delta_VR = VR_f - VR_m,
+                    delta_R = R_f - R_m)
+
+p1 = df %>% 
+  ggplot(aes(x = Vi, fill = Sex)) +
+  stat_halfeye(alpha = .6) + 
+  scale_fill_wsj() +
+  xlab(bquote("Among-individual variance ("*V[i]*")")) +
+  ylab("Density") +
+  theme_bw(14)
+delta.p1 = df.2 %>% 
+  ggplot(aes(x = delta_Vi)) +
+  stat_halfeye(alpha = .6) + 
+  xlab(bquote(Delta[V[i]])) +
+  ylab("Density") +
+  theme_bw(14)
+p1 = p1 + delta.p1
+
+p2 = df %>% 
+  ggplot(aes(x = Vfe, fill = Sex)) +
+  stat_halfeye(alpha = .6) + 
+  scale_fill_wsj() +
+  xlab(bquote("Fixed effect variance ("*V[fe]*")")) +
+  ylab("Density") +
+  theme_bw(14)
+delta.p2 = df.2 %>% 
+  ggplot(aes(x = delta_Vfe)) +
+  stat_halfeye(alpha = .6) + 
+  xlab(bquote(Delta[V[fe]])) +
+  ylab("Density") +
+  theme_bw(14)
+p2 = p2 + delta.p2
+
+
+p3 = df %>% 
+  ggplot(aes(x = Vfe, fill = Sex)) +
+  stat_halfeye(alpha = .6) + 
+  scale_fill_wsj() +
+  xlab(bquote("Residual variance ("*V[R]*")")) +
+  ylab("Density") +
+  theme_bw(14)
+delta.p3 = df.2 %>% 
+  ggplot(aes(x = delta_VR)) +
+  stat_halfeye(alpha = .6) + 
+  xlab(bquote(Delta[V[fe]])) +
+  ylab("Density") +
+  theme_bw(14)
+p3 = p3 + delta.p3
+
+p4 = df %>% 
+  ggplot(aes(x = R, fill = Sex)) +
+  stat_halfeye(alpha = .6) + 
+  scale_fill_wsj() +
+  xlim(0, 1) +
+  xlab(bquote("Repeatability (R)")) +
+  ylab("Density") +
+  theme_bw(14)
+delta.p4 = df.2 %>% 
+  ggplot(aes(x = delta_R)) +
+  stat_halfeye(alpha = .6) + 
+  xlim(0, 1) +
+  xlab(bquote(Delta[R])) +
+  ylab("Density") +
+  theme_bw(14)
+p4 = p4 + delta.p4
+
+plot_var_R = p1 / p2 / p3 / p4
+plot_var_R
+
+ggsave(filename = "outputs/figs/plot_var_R.jpeg", plot_var_R)
 
