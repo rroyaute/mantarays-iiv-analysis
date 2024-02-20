@@ -456,7 +456,7 @@ GLMM.lead.m=glmer(leader~size_n+maturity+shark_bite+anthropogenic+
 summary(GLMM.lead.f); summary(GLMM.lead.m)
 plot(allEffects(GLMM.lead.f)); plot(allEffects(GLMM.lead.m))
 
-
+# Fit models
 rpt.R.f = rpt(formula = leader~size_n+maturity+shark_bite+anthropogenic+
                 (1|id),  
               grname = "id", 
@@ -484,21 +484,40 @@ rpt.V.m <- rpt(formula = leader~size_n+maturity+shark_bite+anthropogenic+
                datatype = "Binary", 
                data = subset(Data, sex_f == "M"),
                ratio = FALSE)
-
 saveRDS(rpt.V.f, here("outputs/mods/rpt.V.f.bin.rds"))
 saveRDS(rpt.V.m, here("outputs/mods/rpt.V.m.bin.rds"))
 
+# All variance ratios
+rpt.r2.f <- rpt(formula = leader~size_n+#maturity+shark_bite+anthropogenic+
+                 (1|id),  
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = c("Binary"), 
+               data = subset(Data, sex_f == "F"),
+               ratio = T)
+rpt.r2.m <- rpt(formula = leader~size_n+maturity+shark_bite+anthropogenic+
+                 (1|id),  
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = "Binary", 
+               data = subset(Data, sex_f == "M"),
+               ratio = T)
+saveRDS(rpt.r2.f, here("outputs/mods/rpt.r2.f.bin.rds"))
+saveRDS(rpt.r2.m, here("outputs/mods/rpt.r2.m.bin.rds"))
+
+# Variance difference figure
 # Store all vectors of bootstrapped values
 # Load models
 rpt.R.f = read_rds(here("outputs/mods/rpt.R.f.bin.rds"))
 rpt.R.m = read_rds(here("outputs/mods/rpt.R.m.bin.rds"))
 rpt.V.f = read_rds(here("outputs/mods/rpt.V.f.bin.rds"))
 rpt.V.m = read_rds(here("outputs/mods/rpt.V.m.bin.rds"))
-
+rpt.r2.f = read_rds(here("outputs/mods/rpt.r2.f.bin.rds"))
+rpt.r2.m = read_rds(here("outputs/mods/rpt.r2.m.bin.rds"))
 plot(rpt.R.f)
 plot(rpt.R.m)
 plot(rpt.V.f)
 plot(rpt.V.m)
+plot(rpt.r2.f)
+plot(rpt.r2.m)
 
 
 Vi_f <- rpt.V.f$R_boot_link$id
@@ -524,7 +543,7 @@ df.2  <- data.frame(delta_Vi = Vi_f - Vi_m,
                     delta_R = R_f - R_m)
 
 p1 = df %>% 
-  ggplot(aes(x = Vi, fill = Sex)) +
+  ggplot(aes(x = Vi, y = Sex, fill = Sex)) +
   stat_halfeye(alpha = .6) + 
   scale_fill_wsj() +
   xlab(bquote("Among-individual variance ("*V[i]*")")) +
@@ -555,7 +574,7 @@ p2 = p2 + delta.p2
 
 
 p3 = df %>% 
-  ggplot(aes(x = Vfe, fill = Sex)) +
+  ggplot(aes(x = VR, fill = Sex)) +
   stat_halfeye(alpha = .6) + 
   scale_fill_wsj() +
   xlab(bquote("Residual variance ("*V[R]*")")) +
@@ -564,7 +583,7 @@ p3 = df %>%
 delta.p3 = df.2 %>% 
   ggplot(aes(x = delta_VR)) +
   stat_halfeye(alpha = .6) + 
-  xlab(bquote(Delta[V[fe]])) +
+  xlab(bquote(Delta[V[R]])) +
   ylab("Density") +
   theme_bw(14)
 p3 = p3 + delta.p3
@@ -590,4 +609,79 @@ plot_var_R = p1 / p2 / p3 / p4
 plot_var_R
 
 ggsave(filename = "outputs/figs/plot_var_R.jpeg", plot_var_R)
+
+# Variance ratio difference figure
+r2_Vi_f <- rpt.r2.f$R_boot_link$id
+r2_Vi_m <- rpt.r2.m$R_boot_link$id
+r2_Vfe_f <- rpt.r2.f$R_boot_link$Fixed
+r2_Vfe_m <- rpt.r2.m$R_boot_link$Fixed
+r2_VR_f <- rpt.r2.f$R_boot_link$Residual
+r2_VR_m <- rpt.r2.m$R_boot_link$Residual
+
+df <- data.frame(r2_Vi = c(r2_Vi_f, r2_Vi_m),
+                 r2_Vfe = c(r2_Vfe_f, r2_Vfe_m),
+                 r2_VR = c(r2_VR_f, r2_VR_m),
+                 Sex = c(rep("F", length(Vi_f)),
+                         rep("M", length(Vi_m))))
+
+# Store effect sizes
+df.2  <- data.frame(delta_r2_Vi = r2_Vi_f - r2_Vi_m,
+                    delta_r2_Vfe = r2_Vfe_f - r2_Vfe_m,
+                    delta_r2_VR = r2_VR_f - r2_VR_m)
+
+p1 = df %>% 
+  ggplot(aes(x = r2_Vi  * 100, fill = Sex)) +
+  stat_halfeye(alpha = .6) + 
+  scale_fill_wsj() +
+  xlab(bquote("Variance explained (%)")) +
+  ylab("Density") +
+  theme_bw(14) +
+  ggtitle("Among-individual variance")
+
+delta.p1 = df.2 %>% 
+  ggplot(aes(x = delta_r2_Vi * 100)) +
+  stat_halfeye(alpha = .6) + 
+  xlab("% difference") +
+  ylab("Density") +
+  theme_bw(14)
+p1 = p1 + delta.p1
+
+p2 = df %>% 
+  ggplot(aes(x = r2_Vfe  * 100, fill = Sex)) +
+  stat_halfeye(alpha = .6) + 
+  scale_fill_wsj() +
+  xlab(bquote("Variance explained (%)")) +
+  ylab("Density") +
+  theme_bw(14) + 
+  ggtitle("Fixed effects")
+
+delta.p2 = df.2 %>% 
+  ggplot(aes(x = delta_r2_Vfe * 100)) +
+  stat_halfeye(alpha = .6) + 
+  xlab("% difference") +
+  ylab("Density") +
+  theme_bw(14)
+p2 = p2 + delta.p2
+
+p3 = df %>% 
+  ggplot(aes(x = r2_VR  * 100, fill = Sex)) +
+  stat_halfeye(alpha = .6) + 
+  scale_fill_wsj() +
+  xlab(bquote("Variance explained (%)")) +
+  ylab("Density") +
+  theme_bw(14) + 
+  ggtitle("Residual variance")
+
+delta.p3 = df.2 %>% 
+  ggplot(aes(x = delta_r2_VR * 100)) +
+  stat_halfeye(alpha = .6) + 
+  xlab("% difference") +
+  ylab("Density") +
+  theme_bw(14)
+p3 = p3 + delta.p3
+
+plot_var_R2 = p1 / p2 / p3
+plot_var_R2
+
+ggsave(filename = "outputs/figs/plot_var_R2.jpeg", plot_var_R2)
 
