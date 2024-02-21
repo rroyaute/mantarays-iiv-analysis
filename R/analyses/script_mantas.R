@@ -621,8 +621,8 @@ r2_VR_m <- rpt.r2.m$R_boot_link$Residual
 df <- data.frame(r2_Vi = c(r2_Vi_f, r2_Vi_m),
                  r2_Vfe = c(r2_Vfe_f, r2_Vfe_m),
                  r2_VR = c(r2_VR_f, r2_VR_m),
-                 Sex = c(rep("F", length(Vi_f)),
-                         rep("M", length(Vi_m))))
+                 Sex = c(rep("F", length(r2_Vi_f)),
+                         rep("M", length(r2_Vi_m))))
 
 # Store effect sizes
 df.2  <- data.frame(delta_r2_Vi = r2_Vi_f - r2_Vi_m,
@@ -685,3 +685,64 @@ plot_var_R2
 
 ggsave(filename = "outputs/figs/plot_var_R2.jpeg", plot_var_R2)
 
+# Barchart version
+df = data.frame(r2_Vi = c(r2_Vi_f, r2_Vi_m),
+                 r2_Vfe = c(r2_Vfe_f, r2_Vfe_m),
+                 r2_VR = c(r2_VR_f, r2_VR_m),
+                 Sex = c(rep("F", length(r2_Vi_f)),
+                         rep("M", length(r2_Vi_m)))) %>%
+  pivot_longer(cols = r2_Vi:r2_VR,
+               names_to = "v.compo",
+               values_to = "var")
+
+p1 = df %>% 
+  group_by(v.compo, Sex) %>% 
+  summarise(var = mean(var)) %>% 
+  ggplot(aes(y = var, x = Sex, fill = v.compo)) +
+  geom_bar(position = "fill", 
+           stat = "identity", width = .2) +
+  scale_fill_wsj(labels = c(
+    bquote(V[fe]), 
+    bquote(V[i]),
+    bquote(V[R]))) +
+  ylab("Variance explained") +
+  theme_bw(18) + 
+  labs(fill = "") +
+  theme(legend.position = c(.9, .5))
+
+delta.vi.r = df.2 %>% 
+  ggplot(aes(x = delta_r2_Vi * 100)) +
+  stat_halfeye(alpha = .6) + 
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") +
+  xlab(bquote(Delta[V[i]])) +
+  ylab("Density") +
+  theme_bw(18) +
+  ggtitle("Difference in variance explained (%)")
+
+delta.vfe.r = df.2 %>% 
+  ggplot(aes(x = delta_r2_Vfe * 100)) +
+  stat_halfeye(alpha = .6) + 
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") + 
+  xlab(bquote(Delta[V[fe]])) +
+  ylab("Density") +
+  theme_bw(18)
+
+delta.vr.r = df.2 %>% 
+  ggplot(aes(x = delta_r2_VR * 100)) +
+  stat_halfeye(alpha = .6) + 
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") + 
+  xlab(bquote(Delta[V[R]])) +
+  ylab("Density") +
+  theme_bw(18)
+
+delta.v.r = delta.vi.r / delta.vfe.r / delta.vr.r
+delta.v.r
+
+delta.v.r = p1 + (delta.vi.r / delta.vfe.r / delta.vr.r)
+delta.v.r
+
+ggsave(filename = "outputs/figs/delta.v.r.jpeg", delta.v.r, 
+       width = 12, height = 8)
