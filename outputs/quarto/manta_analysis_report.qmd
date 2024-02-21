@@ -1,0 +1,369 @@
+---
+title: "Reproducible analysis for: Individual flexibility in group foraging behaviour of reef manta rays (Mobula alfredi)"
+author: "Raphaël Royauté"
+date: last-modified
+format:
+  pdf: 
+    fig-cap-location: bottom
+    fig-width: 8
+    fig-height: 8
+    number-sections: true
+    # number-depth: 3
+    highlight-style: github-dark
+toc: true
+toc-depth: 5
+toc-location: left
+execute:
+  echo: true
+  warning: false
+  message: false
+editor: 
+  markdown: 
+    wrap: sentence
+---
+
+## Rationale
+
+TODO
+
+## Packages and data import
+
+Make sure to have these packages installed before runnig the code in this report
+
+
+
+```{r}
+library(tidyverse); library(here); library(easystats);
+library(kableExtra); library(lme4); library(effects)
+library(marginaleffects);  library(ggeffects);  library(rptR)
+library(gtsummary); library(ggthemes); library(patchwork)
+```
+
+```{r}
+here()
+```
+
+
+Import complete dataset
+
+```{r}
+df = read.csv(here("data/data-clean/Manta Data_Annie.csv"),
+              header=TRUE, sep=",", na.strings="NA", dec=".",
+              strip.white=TRUE)
+```
+
+Import group foraging dataset
+
+```{r}
+df.group = read.csv(here("data/data-clean/group_rp.csv"), 
+                    header=TRUE, sep=",", na.strings="NA", dec=".",
+                    strip.white=TRUE)
+str(df.group)
+df.group$id = as.factor(df.group$id)
+df.group$site = as.factor(df.group$site)
+df.group$sex_f = as.factor(ifelse(df.group$sex=="1","F","M"))
+df.group$size = as.factor(df.group$size)
+df.group$maturity = as.factor(df.group$maturity)
+df.group$plankton = as.factor(df.group$plankton)
+df.group$shark_bite = as.factor(df.group$shark_bite)
+df.group$anthropogenic = as.factor(df.group$anthropogenic)
+df.group$Id = df.group$id
+
+# Transform Time columns centered aroun 12:00pm expressed in hours
+df.group$time_cen = hm(df.group$time)
+df.group$time_cen = as.numeric(df.group$time_cen-hours(12))/3600
+
+# subset with only individuals within groups
+df.group = df.group[df.group$group==1,]
+df.group=df.group[complete.cases(df.group$position),]
+head(df.group) %>% kable()
+```
+
+## Group vs. solo foraging
+
+## What explains variation in group leadership ?
+
+We fit a binomial GLMM on leadership probability with the following covariates:
+
+-   Sex
+-   Age class
+-   Shark injury status
+-   Anthropogenic injury status
+-   Individual ID (random effect)
+
+```{r}
+glmm.lead=glmer(leader ~ 
+                  sex_f + maturity + 
+                  shark_bite + anthropogenic + (1|Id), 
+                family = "binomial",
+                df.group)
+
+summary(glmm.lead)
+plot(allEffects(glmm.lead))
+
+# Save model file
+saveRDS(glmm.lead, file = here("outputs/mods/glmm.lead.rds"))
+```
+
+Inspect the model
+
+```{r}
+check_model(glmm.lead)
+```
+
+Check R2 and repeatability
+
+```{r}
+#| eval: true
+#| echo: false
+# Import values
+r2.lead = read_rds(file = here("outputs/mods/r2.lead.rds"))
+icc.lead = read_rds(file = here("outputs/mods/icc.lead.rds"))
+```
+
+```{r}
+#| eval: false
+r2.lead = r2_nakagawa(glmm.lead, ci = T)
+icc.lead = icc(glmm.lead, ci = T)
+r2.lead; icc.lead
+
+# Save files to avoid reloading
+saveRDS(r2.lead, file = here("outputs/mods/r2.lead.rds"))
+saveRDS(icc.lead, file = here("outputs/mods/icc.lead.rds"))
+```
+
+
+
+Get model summary in table format
+```{r}
+tbl.glmm.lead = glmm.lead %>% 
+  tbl_regression(
+  exponentiate = TRUE,
+    pvalue_fun = ~ style_pvalue(.x, digits = 2)) %>%
+  add_global_p() %>%
+  bold_p(t = .05) %>%
+  bold_labels() %>%
+  italicize_levels() %>% 
+  add_nevent(location = "level")
+tbl.glmm.lead
+```
+
+We can now export the table in both word and html format
+
+```{r}
+tbl.glmm.lead %>% 
+  as_gt() %>%
+  gt::gtsave(filename = here("outputs/tables/tbl.glmm.lead.html"))
+
+tbl.glmm.lead %>% 
+  as_gt() %>%
+  gt::gtsave(filename = here("outputs/tables/tbl.glmm.lead.docx"))
+```
+
+
+## Individual differences in group leadership compared between sexes, age and injury status
+
+
+### Male - female differences
+
+```{r}
+#| eval: true
+#| echo: false
+# Import rptR models
+rpt.R.f.sex = read_rds(here("outputs/mods/rpt.R.f.sex.rds"))
+rpt.R.m.sex = read_rds(here("outputs/mods/rpt.R.m.sex.rds"))
+rpt.V.f.sex = read_rds(here("outputs/mods/rpt.V.f.sex.rds"))
+rpt.V.m.sex = read_rds(here("outputs/mods/rpt.V.m.sex.rds"))
+rpt.r2.f.sex = read_rds(here("outputs/mods/rpt.r2.f.sex.rds"))
+rpt.r2.m.sex = read_rds(here("outputs/mods/rpt.r2.m.sex.rds"))
+```
+
+
+#### Fit glmer models
+
+
+```{r}
+glmm.lead.f = glmer(leader ~ 
+                      maturity + 
+                      shark_bite + anthropogenic + (1|id), 
+                    family = "binomial",
+                    subset(df.group, sex_f == "F"))
+glmm.lead.m = glmer(leader ~ 
+                      maturity + 
+                      shark_bite + anthropogenic + (1|id), 
+                    family = "binomial",
+                    subset(df.group, sex_f == "M"))
+
+summary(glmm.lead.f); summary(glmm.lead.m)
+plot(allEffects(glmm.lead.f)); plot(allEffects(glmm.lead.f))
+```
+
+Note that the model does not converges properly with the male dataset. This comes from that fact that there are few adult males in the population. Because our question is now related to variance component, we keep the fixed effect structure the same regardless for consistency.
+
+
+#### Fit rptR models
+
+Adjusted repeatability
+
+```{r}
+#| eval: false
+rpt.R.f = rpt(leader ~ maturity + 
+                shark_bite + anthropogenic + (1|id),  
+              grname = "id", 
+              datatype = "Binary", 
+              data = subset(df.group, sex_f == "F"))
+rpt.R.m = rpt(leader ~ maturity + 
+                shark_bite + anthropogenic + (1|id),  
+              grname = "id", 
+              datatype = "Binary", 
+              data = subset(df.group, sex_f == "M"))
+
+saveRDS(rpt.R.f, here("outputs/mods/rpt.R.f.sex.rds"))
+saveRDS(rpt.R.m, here("outputs/mods/rpt.R.f.sex.rds"))
+```
+All variance components
+
+```{r}
+#| eval: false
+
+rpt.V.f = rpt(leader ~ maturity + 
+                shark_bite + anthropogenic + (1|id), 
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = c("Binary"), 
+               data = subset(df.group, sex_f == "F"),
+               ratio = FALSE)
+rpt.V.m = rpt(leader ~ maturity + 
+                shark_bite + anthropogenic + (1|id), 
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = "Binary", 
+               data = subset(df.group, sex_f == "M"),
+               ratio = FALSE)
+saveRDS(rpt.V.f, here("outputs/mods/rpt.V.f.sex.rds"))
+saveRDS(rpt.V.m, here("outputs/mods/rpt.V.m.sex.rds"))
+```
+
+All variance ratios
+
+```{r}
+#| eval: false
+
+rpt.r2.f = rpt(leader ~ maturity + 
+                shark_bite + anthropogenic + (1|id),  
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = c("Binary"), 
+               data = subset(df.group, sex_f == "F"),
+               ratio = T)
+rpt.r2.m = rpt(leader ~ maturity + 
+                shark_bite + anthropogenic + (1|id), 
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = "Binary", 
+               data = subset(df.group, sex_f == "M"),
+               ratio = T)
+saveRDS(rpt.r2.f, here("outputs/mods/rpt.r2.f.sex.rds"))
+saveRDS(rpt.r2.m, here("outputs/mods/rpt.r2.m.sex.rds"))
+```
+
+#### Plot the model estimates
+
+Store all variance components
+```{r}
+Vi_f = rpt.V.f$R_boot_link$id
+Vi_m = rpt.V.m$R_boot_link$id
+Vfe_f = rpt.V.f$R_boot_link$Fixed
+Vfe_m = rpt.V.m$R_boot_link$Fixed
+VR_f = rpt.V.f$R_boot_link$Residual
+VR_m = rpt.V.m$R_boot_link$Residual
+R_f = rpt.R.f$R_boot_link$id
+R_m = rpt.R.m$R_boot_link$id
+```
+
+Put into formated table
+```{r}
+# Variance ratio difference figure
+r2_Vi_f = rpt.r2.f$R_boot_link$id
+r2_Vi_m = rpt.r2.m$R_boot_link$id
+r2_Vfe_f = rpt.r2.f$R_boot_link$Fixed
+r2_Vfe_m = rpt.r2.m$R_boot_link$Fixed
+r2_VR_f = rpt.r2.f$R_boot_link$Residual
+r2_VR_m = rpt.r2.m$R_boot_link$Residual
+
+df = data.frame(r2_Vi = c(r2_Vi_f, r2_Vi_m),
+                 r2_Vfe = c(r2_Vfe_f, r2_Vfe_m),
+                 r2_VR = c(r2_VR_f, r2_VR_m),
+                 Sex = c(rep("F", length(r2_Vi_f)),
+                         rep("M", length(r2_Vi_m)))) %>%
+  pivot_longer(cols = r2_Vi:r2_VR,
+               names_to = "v.compo",
+               values_to = "var")
+
+# Store effect sizes
+df.2  = data.frame(delta_r2_Vi = r2_Vi_f - r2_Vi_m,
+                    delta_r2_Vfe = r2_Vfe_f - r2_Vfe_m,
+                    delta_r2_VR = r2_VR_f - r2_VR_m)
+```
+
+Plot
+```{r}
+#| fig-width: 12
+#| fig-height: 8
+
+p1 = df %>% 
+  group_by(v.compo, Sex) %>% 
+  summarise(var = mean(var)) %>% 
+  ggplot(aes(y = var, x = Sex, fill = v.compo)) +
+  geom_bar(position = "fill", 
+           stat = "identity", width = .2) +
+  scale_fill_wsj(labels = c(
+    bquote(V[fe]), 
+    bquote(V[i]),
+    bquote(V[R]))) +
+  ylab("Variance explained") +
+  theme_bw(18) + 
+  labs(fill = "") +
+  theme(legend.position = c(.9, .5))
+
+delta.vi.r = df.2 %>% 
+  ggplot(aes(x = delta_r2_Vi * 100)) +
+  stat_halfeye(alpha = .6) + 
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") +
+  xlab(bquote(Delta[V[i]])) +
+  ylab("Density") +
+  theme_bw(18) +
+  ggtitle("Difference in variance explained (%)")
+
+delta.vfe.r = df.2 %>% 
+  ggplot(aes(x = delta_r2_Vfe * 100)) +
+  stat_halfeye(alpha = .6) + 
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") + 
+  xlab(bquote(Delta[V[fe]])) +
+  ylab("Density") +
+  theme_bw(18)
+
+delta.vr.r = df.2 %>% 
+  ggplot(aes(x = delta_r2_VR * 100)) +
+  stat_halfeye(alpha = .6) + 
+  geom_vline(xintercept = 0, 
+             linetype = "dashed") + 
+  xlab(bquote(Delta[V[R]])) +
+  ylab("Density") +
+  theme_bw(18)
+
+delta.v.r = delta.vi.r / delta.vfe.r / delta.vr.r
+
+delta.v.r = p1 + (delta.vi.r / delta.vfe.r / delta.vr.r)
+delta.v.r
+
+ggsave(filename = "outputs/figs/delta.v.r.jpeg", delta.v.r, 
+       width = 12, height = 8)
+ggsave(filename = "outputs/figs/delta.v.r.pdf", delta.v.r, 
+       width = 12, height = 8)
+
+```
+
+
+
+### Juvenile - adult differences
+
+###

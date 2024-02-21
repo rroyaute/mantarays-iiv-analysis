@@ -1,3 +1,4 @@
 project:
-  type: website
+  # type: website
   output-dir: docs
+  execute-dir: project
