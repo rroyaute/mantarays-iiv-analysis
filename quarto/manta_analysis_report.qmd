@@ -7,12 +7,10 @@ format:
     fig-cap-location: bottom
     fig-width: 8
     fig-height: 8
+    toc: true
+    toc-depth: 5
     number-sections: true
-    # number-depth: 3
     highlight-style: github-dark
-toc: true
-toc-depth: 5
-toc-location: left
 execute:
   echo: true
   warning: false
@@ -24,12 +22,11 @@ editor:
 
 ## Rationale
 
-TODO
+This is a reproducible script for all statistical models and their outputs presented in our article.
 
 ## Packages and data import
 
-Make sure to have these packages installed before runnig the code in this report
-
+Make sure to have these packages installed before running the code in this report
 
 
 ```{r}
@@ -40,10 +37,6 @@ library(gtsummary); library(ggthemes); library(patchwork)
 library(tidybayes)
 ```
 
-```{r}
-here()
-```
-
 
 Import complete dataset
 
@@ -51,6 +44,10 @@ Import complete dataset
 df = read.csv(here("data/data-clean/Manta Data_Annie.csv"),
               header=TRUE, sep=",", na.strings="NA", dec=".",
               strip.white=TRUE)
+df %>% 
+  select(1:10) %>% 
+  head() %>% 
+  kable()
 ```
 
 Import group foraging dataset
@@ -59,7 +56,6 @@ Import group foraging dataset
 df.group = read.csv(here("data/data-clean/group_rp.csv"), 
                     header=TRUE, sep=",", na.strings="NA", dec=".",
                     strip.white=TRUE)
-str(df.group)
 df.group$id = as.factor(df.group$id)
 df.group$site = as.factor(df.group$site)
 df.group$sex_f = as.factor(ifelse(df.group$sex=="1","F","M"))
@@ -77,7 +73,10 @@ df.group$time_cen = as.numeric(df.group$time_cen-hours(12))/3600
 # subset with only individuals within groups
 df.group = df.group[df.group$group==1,]
 df.group=df.group[complete.cases(df.group$position),]
-glimpse(df.group) %>% kable()
+df.group %>% 
+  select(1:10) %>% 
+  head() %>% 
+  kable()
 ```
 
 ## Group vs. solo foraging
@@ -139,7 +138,8 @@ Get model summary in table format
 ```{r}
 tbl.glmm.lead = glmm.lead %>% 
   tbl_regression(
-  exponentiate = TRUE,
+    intercept = T,
+    exponentiate = TRUE,
     pvalue_fun = ~ style_pvalue(.x, digits = 2)) %>%
   add_global_p() %>%
   bold_p(t = .05) %>%
@@ -171,12 +171,12 @@ tbl.glmm.lead %>%
 #| eval: true
 #| echo: false
 # Import rptR models
-rpt.R.f.sex = read_rds(here("outputs/mods/rpt.R.f.sex.rds"))
-rpt.R.m.sex = read_rds(here("outputs/mods/rpt.R.m.sex.rds"))
-rpt.V.f.sex = read_rds(here("outputs/mods/rpt.V.f.sex.rds"))
-rpt.V.m.sex = read_rds(here("outputs/mods/rpt.V.m.sex.rds"))
-rpt.r2.f.sex = read_rds(here("outputs/mods/rpt.r2.f.sex.rds"))
-rpt.r2.m.sex = read_rds(here("outputs/mods/rpt.r2.m.sex.rds"))
+rpt.R.f = read_rds(file = here("outputs/mods/rpt.R.f.rds"))
+rpt.R.m = read_rds(file = here("outputs/mods/rpt.R.m.rds"))
+rpt.V.f = read_rds(file = here("outputs/mods/rpt.V.f.rds"))
+rpt.V.m = read_rds(file = here("outputs/mods/rpt.V.m.rds"))
+rpt.r2.f = read_rds(file = here("outputs/mods/rpt.r2.f.rds"))
+rpt.r2.m = read_rds(file = here("outputs/mods/rpt.r2.m.rds"))
 
 ```
 
@@ -198,9 +198,13 @@ glmm.lead.m = glmer(leader ~
 
 summary(glmm.lead.f); summary(glmm.lead.m)
 plot(allEffects(glmm.lead.f)); plot(allEffects(glmm.lead.f))
+
+# Save model file
+saveRDS(glmm.lead.f, file = here("outputs/mods/glmm.lead.f.rds"))
+saveRDS(glmm.lead.m, file = here("outputs/mods/glmm.lead.m.rds"))
 ```
 
-Note that the model does not converges properly with the male dataset. This comes from that fact that there are few adult males in the population. Because our question is now related to variance component, we keep the fixed effect structure the same regardless for consistency.
+The model does not converges properly with the male dataset. This comes from that fact that there are few adult males in the population. Because our question is now related to variance component, we keep the fixed effect structure the same regardless for consistency.
 
 
 #### Fit rptR models
@@ -208,7 +212,7 @@ Note that the model does not converges properly with the male dataset. This come
 Adjusted repeatability
 
 ```{r}
-##| eval: false
+#| eval: false
 rpt.R.f = rpt(leader ~ maturity + 
                 shark_bite + anthropogenic + (1|id),  
               grname = "id", 
@@ -220,34 +224,34 @@ rpt.R.m = rpt(leader ~ maturity +
               datatype = "Binary", 
               data = subset(df.group, sex_f == "M"))
 
-saveRDS(rpt.R.f, here("outputs/mods/rpt.R.f.sex.rds"))
-saveRDS(rpt.R.m, here("outputs/mods/rpt.R.f.sex.rds"))
+saveRDS(rpt.R.f, here("outputs/mods/rpt.R.f.rds"))
+saveRDS(rpt.R.m, here("outputs/mods/rpt.R.m.rds"))
 ```
 All variance components
 
 ```{r}
-##| eval: false
+#| eval: false
 
 rpt.V.f = rpt(leader ~ maturity + 
                 shark_bite + anthropogenic + (1|id), 
-               grname = c("id", "Fixed", "Residual"), 
-               datatype = c("Binary"), 
-               data = subset(df.group, sex_f == "F"),
-               ratio = FALSE)
+              grname = c("id", "Fixed", "Residual"), 
+              datatype = c("Binary"), 
+              data = subset(df.group, sex_f == "F"),
+              ratio = FALSE)
 rpt.V.m = rpt(leader ~ maturity + 
                 shark_bite + anthropogenic + (1|id), 
-               grname = c("id", "Fixed", "Residual"), 
-               datatype = "Binary", 
-               data = subset(df.group, sex_f == "M"),
-               ratio = FALSE)
-saveRDS(rpt.V.f, here("outputs/mods/rpt.V.f.sex.rds"))
-saveRDS(rpt.V.m, here("outputs/mods/rpt.V.m.sex.rds"))
+              grname = c("id", "Fixed", "Residual"), 
+              datatype = "Binary", 
+              data = subset(df.group, sex_f == "M"),
+              ratio = FALSE)
+saveRDS(rpt.V.f, here("outputs/mods/rpt.V.f.rds"))
+saveRDS(rpt.V.m, here("outputs/mods/rpt.V.m.rds"))
 ```
 
 All variance ratios
 
 ```{r}
-##| eval: false
+#| eval: false
 
 rpt.r2.f = rpt(leader ~ maturity + 
                 shark_bite + anthropogenic + (1|id),  
@@ -261,8 +265,8 @@ rpt.r2.m = rpt(leader ~ maturity +
                datatype = "Binary", 
                data = subset(df.group, sex_f == "M"),
                ratio = T)
-saveRDS(rpt.r2.f, here("outputs/mods/rpt.r2.f.sex.rds"))
-saveRDS(rpt.r2.m, here("outputs/mods/rpt.r2.m.sex.rds"))
+saveRDS(rpt.r2.f, here("outputs/mods/rpt.r2.f.rds"))
+saveRDS(rpt.r2.m, here("outputs/mods/rpt.r2.m.rds"))
 ```
 
 #### Plot the model estimates
