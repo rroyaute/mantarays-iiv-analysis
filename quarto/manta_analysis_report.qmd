@@ -37,6 +37,7 @@ library(tidyverse); library(here); library(easystats);
 library(kableExtra); library(lme4); library(effects)
 library(marginaleffects);  library(ggeffects);  library(rptR)
 library(gtsummary); library(ggthemes); library(patchwork)
+library(tidybayes)
 ```
 
 ```{r}
@@ -76,7 +77,7 @@ df.group$time_cen = as.numeric(df.group$time_cen-hours(12))/3600
 # subset with only individuals within groups
 df.group = df.group[df.group$group==1,]
 df.group=df.group[complete.cases(df.group$position),]
-head(df.group) %>% kable()
+glimpse(df.group) %>% kable()
 ```
 
 ## Group vs. solo foraging
@@ -176,6 +177,7 @@ rpt.V.f.sex = read_rds(here("outputs/mods/rpt.V.f.sex.rds"))
 rpt.V.m.sex = read_rds(here("outputs/mods/rpt.V.m.sex.rds"))
 rpt.r2.f.sex = read_rds(here("outputs/mods/rpt.r2.f.sex.rds"))
 rpt.r2.m.sex = read_rds(here("outputs/mods/rpt.r2.m.sex.rds"))
+
 ```
 
 
@@ -206,7 +208,7 @@ Note that the model does not converges properly with the male dataset. This come
 Adjusted repeatability
 
 ```{r}
-#| eval: false
+##| eval: false
 rpt.R.f = rpt(leader ~ maturity + 
                 shark_bite + anthropogenic + (1|id),  
               grname = "id", 
@@ -224,7 +226,7 @@ saveRDS(rpt.R.m, here("outputs/mods/rpt.R.f.sex.rds"))
 All variance components
 
 ```{r}
-#| eval: false
+##| eval: false
 
 rpt.V.f = rpt(leader ~ maturity + 
                 shark_bite + anthropogenic + (1|id), 
@@ -245,7 +247,7 @@ saveRDS(rpt.V.m, here("outputs/mods/rpt.V.m.sex.rds"))
 All variance ratios
 
 ```{r}
-#| eval: false
+##| eval: false
 
 rpt.r2.f = rpt(leader ~ maturity + 
                 shark_bite + anthropogenic + (1|id),  
