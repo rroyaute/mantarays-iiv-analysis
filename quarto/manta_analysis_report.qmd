@@ -123,8 +123,9 @@ Site, current, time to high tide, plankton, number of mantas (scaled for control
 ### AIC model comparison
 
 
-## What explains variation in group leadership? (TODO)
+## What explains variation in group leadership?
 
+### Model fitting and checks
 We fit a binomial GLMM on leadership probability with the following covariates:
 
 -   Sex
@@ -134,8 +135,7 @@ We fit a binomial GLMM on leadership probability with the following covariates:
 -   Individual ID (random effect)
 
 ```{r}
-glmm.lead=glmer(leader ~ 
-                  sex_f + maturity + 
+glmm.lead = glmer(leader ~  sex_f + maturity + 
                   shark_bite + anthropogenic + (1|Id), 
                 family = "binomial",
                 df.group)
@@ -201,6 +201,139 @@ tbl.glmm.lead %>%
 tbl.glmm.lead %>% 
   as_gt() %>%
   gt::gtsave(filename = here("outputs/tables/tbl.glmm.lead.docx"))
+```
+
+### Plots and tables
+We can get a full breakdown of the % of variance explained by all components in the model (fixed and random effects) using the `rpt()` function in the `rptR` package.
+
+```{r}
+#| eval: true
+#| echo: false
+# Import rptR model
+rpt.r2.lead = read_rds(file = here("outputs/mods/rpt.r2.lead.rds"))
+rpt.V.lead = read_rds(file = here("outputs/mods/rpt.V.lead.rds"))
+
+```
+
+
+```{r}
+#| eval: false
+rpt.V.lead = rpt(leader ~ sex_f + maturity +  shark_bite +
+                      anthropogenic + (1|id), 
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = c("Binary"), 
+              parallel = T, 
+               data = df.group,
+               ratio = F)
+saveRDS(rpt.V.lead, file = here("outputs/mods/rpt.V.lead.rds"))
+
+rpt.r2.lead = rpt(leader ~ sex_f + maturity +  shark_bite +
+                      anthropogenic + (1|id), 
+               grname = c("id", "Fixed", "Residual"), 
+               datatype = c("Binary"), 
+              parallel = T, 
+               data = df.group,
+               ratio = T)
+saveRDS(rpt.r2.lead, file = here("outputs/mods/rpt.r2.lead.rds"))
+```
+Next we can combine all this information in figure format
+
+```{r}
+r2_Vi = rpt.r2.lead$R_boot_link$id
+r2_Vfe = rpt.r2.lead$R_boot_link$Fixed
+r2_VR = rpt.r2.lead$R_boot_link$Residual
+
+Vi = rpt.V.lead$R_boot_link$id
+Vfe = rpt.V.lead$R_boot_link$Fixed
+VR = rpt.V.lead$R_boot_link$Residual
+
+
+df.compo.r2 = data.frame(r2_Vi = r2_Vi,
+                         r2_Vfe = r2_Vfe,
+                         r2_VR = r2_VR) %>%
+  pivot_longer(cols = r2_Vi:r2_VR,
+               names_to = "v.compo",
+               values_to = "var")
+df.compo.V = data.frame(Vi = Vi,
+                        Vfe = Vfe,
+                        VR = VR) %>%
+  pivot_longer(cols = Vi:VR,
+               names_to = "v.compo",
+               values_to = "var")
+```
+
+
+```{r}
+p1 = df.compo.r2 %>% 
+  group_by(v.compo) %>% 
+  summarise(var = mean(var)) %>% 
+  ggplot(aes(y = var * 100, x = 0, fill = v.compo)) +
+  geom_bar(position = "fill", 
+           stat = "identity", width = .02) +
+  scale_fill_wsj(labels = c(
+    bquote(V[fe]), 
+    bquote(V[i]),
+    bquote(V[R]))) +
+  xlab("Variance components") +
+  ylab("Variance explained (proportion)") +
+  theme_bw(18) + 
+  theme(legend.position = c(.9, .5),
+        legend.title = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank())
+
+p2 = df.compo.V %>% 
+  ggplot(aes(y = v.compo, x = var, fill = v.compo)) +
+  stat_halfeye() + 
+  scale_fill_wsj() +
+  scale_y_discrete(labels = c(
+    bquote(V[fe]), 
+    bquote(V[i]),
+    bquote(V[R]))) +
+  xlab("Variance") +
+  ylab("Variance component") +
+  theme_bw(18) +
+  theme(legend.position = "none")
+
+var.compo = p1 + p2 +plot_annotation(tag_levels = 'A')
+var.compo
+
+ggsave(filename = "outputs/figs/var.compo.jpeg", var.compo, 
+       width = 12, height = 8)
+ggsave(filename = "outputs/figs/var.compo.pdf", var.compo, 
+       width = 12, height = 8)
+
+```
+
+
+Finally we can export these values in table form
+
+```{r}
+data.frame(Vi = Vi,
+           Vfe = Vfe,
+           VR = VR) %>%
+  describe_posterior() %>% 
+  mutate("Variance_component" = as.factor(Parameter)) %>% 
+  mutate(Variance_component = fct_recode(Variance_component, 
+             Vi = "Vi",
+             Vfe = "Vfe",
+             VR = "VR")) %>% 
+  select(c(11, 2, 4 :6)) %>% 
+  kable(digits = 2)
+
+# Proportion of variance explained 
+data.frame(r2_Vi = r2_Vi * 100,
+           r2_Vfe = r2_Vfe * 100,
+           r2_VR = r2_VR * 100) %>% 
+  describe_posterior() %>% 
+  mutate("Variance_explained" = as.factor(Parameter)) %>% 
+  mutate(Variance_explained = fct_recode(Variance_explained, 
+             Vi = "Vi",
+             Vfe = "Vfe",
+             VR = "VR")) %>% 
+  select(c(11, 2, 4 :6)) %>% 
+  kable(digits = 2)
+
 ```
 
 
@@ -346,7 +479,7 @@ R_m = rpt.R.m$R_boot_link$id
 
 Put into formated table
 ```{r}
-# Variance ratio difference figure
+# Variance ratio difference figure (deltaV = Vmales - Vfemales)
 r2_Vi_f = rpt.r2.f$R_boot_link$id
 r2_Vi_m = rpt.r2.m$R_boot_link$id
 r2_Vfe_f = rpt.r2.f$R_boot_link$Fixed
@@ -364,9 +497,9 @@ df.sex = data.frame(r2_Vi = c(r2_Vi_f, r2_Vi_m),
                values_to = "var")
 
 # Store effect sizes
-df.sex.2  = data.frame(delta_r2_Vi = r2_Vi_f - r2_Vi_m,
-                   delta_r2_Vfe = r2_Vfe_f - r2_Vfe_m,
-                   delta_r2_VR = r2_VR_f - r2_VR_m)
+df.sex.2  = data.frame(delta_r2_Vi = r2_Vi_m - r2_Vi_f,
+                   delta_r2_Vfe = r2_Vfe_m - r2_Vfe_f,
+                   delta_r2_VR = r2_VR_m - r2_VR_f)
 ```
 
 Plot
@@ -384,7 +517,7 @@ p1 = df.sex %>%
     bquote(V[fe]), 
     bquote(V[i]),
     bquote(V[R]))) +
-  ylab("Variance explained") +
+  ylab("Variance explained (proportion)") +
   theme_bw(18) + 
   labs(fill = "") +
   theme(legend.position = c(.9, .5))
@@ -525,7 +658,7 @@ R_a = rpt.R.a$R_boot_link$id
 
 Put into formated table
 ```{r}
-# Variance ratio difference figure
+# Variance ratio difference figure (deltaV = Vadults - Vjuveniles)
 r2_Vi_j = rpt.r2.j$R_boot_link$id
 r2_Vi_a = rpt.r2.a$R_boot_link$id
 r2_Vfe_j = rpt.r2.j$R_boot_link$Fixed
@@ -543,9 +676,9 @@ df.mat = data.frame(r2_Vi = c(r2_Vi_j, r2_Vi_a),
                values_to = "var")
 
 # Store effect sizes
-df.mat.2  = data.frame(delta_r2_Vi = r2_Vi_j - r2_Vi_a,
-                   delta_r2_Vfe = r2_Vfe_j - r2_Vfe_a,
-                   delta_r2_VR = r2_VR_j - r2_VR_a)
+df.mat.2  = data.frame(delta_r2_Vi = r2_Vi_a - r2_Vi_j,
+                   delta_r2_Vfe = r2_Vfe_a - r2_Vfe_j,
+                   delta_r2_VR = r2_VR_a - r2_VR_j)
 ```
 
 Plot
@@ -563,7 +696,7 @@ p1 = df.mat %>%
     bquote(V[fe]), 
     bquote(V[i]),
     bquote(V[R]))) +
-  ylab("Variance explained") +
+  ylab("Variance explained (proportion)") +
   theme_bw(18) + 
   labs(fill = "") +
   theme(legend.position = c(.9, .5))
@@ -705,7 +838,7 @@ R_i = rpt.R.i$R_boot_link$id
 
 Put into formated table
 ```{r}
-# Variance ratio difference figure
+# Variance ratio difference figure (deltaV = Vinjured - Vn-injured)
 r2_Vi_ni = rpt.r2.ni$R_boot_link$id
 r2_Vi_i = rpt.r2.i$R_boot_link$id
 r2_Vfe_ni = rpt.r2.ni$R_boot_link$Fixed
@@ -723,9 +856,9 @@ df.inj = data.frame(r2_Vi = c(r2_Vi_ni, r2_Vi_i),
                values_to = "var")
 
 # Store effect sizes
-df.inj.2  = data.frame(delta_r2_Vi = r2_Vi_ni - r2_Vi_i,
-                   delta_r2_Vfe = r2_Vfe_ni - r2_Vfe_i,
-                   delta_r2_VR = r2_VR_ni - r2_VR_i)
+df.inj.2  = data.frame(delta_r2_Vi = r2_Vi_i - r2_Vi_ni,
+                   delta_r2_Vfe = r2_Vfe_i - r2_Vfe_ni,
+                   delta_r2_VR = r2_VR_i - r2_VR_ni)
 ```
 
 Plot
@@ -743,7 +876,7 @@ p1 = df.inj %>%
     bquote(V[fe]), 
     bquote(V[i]),
     bquote(V[R]))) +
-  ylab("Variance explained") +
+  ylab("Variance explained (proportion)") +
   theme_bw(18) + 
   labs(fill = "") +
   theme(legend.position = c(.9, .5))
@@ -794,7 +927,7 @@ We can calculate the median and 95 % CI for the distribution of the difference b
 
 
 ```{r}
-tbl_delta_r2_sex = describe_posterior(df.sex.2) %>% 
+tbl_delta_r2_sex = describe_posterior(df.sex.2*100) %>% 
   data.frame() %>% 
   mutate("Variance_component" = as.factor(Parameter)) %>% 
   mutate(Variance_component = fct_recode(Variance_component, 
@@ -804,7 +937,7 @@ tbl_delta_r2_sex = describe_posterior(df.sex.2) %>%
   select(c(11, 2, 4 :6)) %>% 
   kable(digits = 2)
 
-tbl_delta_r2_maturity = describe_posterior(df.mat.2) %>% 
+tbl_delta_r2_maturity = describe_posterior(df.mat.2*100) %>% 
   data.frame() %>% 
   mutate("Variance_component" = as.factor(Parameter)) %>% 
   mutate(Variance_component = fct_recode(Variance_component, 
@@ -814,7 +947,7 @@ tbl_delta_r2_maturity = describe_posterior(df.mat.2) %>%
   select(c(11, 2, 4 :6)) %>% 
   kable(digits = 2)
 
-tbl_delta_r2_injury = describe_posterior(df.inj.2) %>% 
+tbl_delta_r2_injury = describe_posterior(df.inj.2*100) %>% 
   data.frame() %>% 
   mutate("Variance_component" = as.factor(Parameter)) %>% 
   mutate(Variance_component = fct_recode(Variance_component, 
