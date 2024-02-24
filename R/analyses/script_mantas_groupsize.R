@@ -207,10 +207,11 @@ p2 = df.compo.V %>%
 
 var.compo = p1 + p2 +plot_annotation(tag_levels = 'A')
 var.compo
+save(var.compo, file = here("outputs/ggplot/var.compo.gsize.rdata"))
 
-ggsave(filename = "outputs/figs/var.compo.gsize.jpeg", var.compo, 
+ggsave(filename = here("outputs/figs/var.compo.gsize.jpeg"), var.compo, 
        width = 12, height = 8)
-ggsave(filename = "outputs/figs/var.compo.gsize.pdf", var.compo, 
+ggsave(filename = here("outputs/figs/var.compo.gsize.pdf"), var.compo, 
        width = 12, height = 8)
 
 #### Table ----

@@ -1,4 +1,4 @@
-library(tidyverse); library(here); library(easystats);
+library(tidyverse); library(here); library(easystats)
 library(kableExtra); library(lme4); library(effects)
 library(marginaleffects);  library(ggeffects);  library(rptR)
 library(gtsummary); library(ggthemes); library(patchwork)
@@ -113,7 +113,7 @@ Model.list[[4]]=glmm.lead
 names(Model.list)=c("Null", "Internal","External", "Internal + External")
 # Calculate AIC values and delta_AIC by setting second.ord = F 
 #(returns AICc otherwise, which are mostly used with limited samples sizes)
-data.frame(aictab(Model.list, second.ord = F)) %>% 
+aictab.lead = data.frame(aictab(Model.list, second.ord = F)) %>% 
   select(1:4) %>% rename("Model" = Modnames)
 
 #### R2 for fixed effects in each model ----
@@ -130,11 +130,11 @@ R2.table = data.frame(
          R2.full$R2_marginal))
 
 #### Effect plots and coefficient table for full model ----
-check_model(glmm.gsize.full)
+check_model(glmm.lead)
 
-plot(allEffects(glmm.gsize.full))
+plot(allEffects(glmm.lead))
 
-glmm.gsize = glmm.gsize.full %>% 
+glmm.lead.tbl = glmm.lead %>% 
   tbl_regression(
     intercept = T,
     exponentiate = F,
@@ -144,22 +144,22 @@ glmm.gsize = glmm.gsize.full %>%
   bold_labels() %>%
   italicize_levels() %>% 
   add_n(location = "level")
-glmm.gsize
+glmm.lead.tbl
 
 #### Export tables ----
-aictab.gsize = full_join(aictab.gsize, data.frame(R2.table)) %>%
+aictab.lead = full_join(aictab.lead, data.frame(R2.table)) %>%
   gt() %>%
   fmt_number(decimals = 2) %>% 
   cols_label(Delta_AIC = "∆AIC")
 
-aictab.gsize %>% 
-  gtsave(filename = here("outputs/tables/aictab.gsize.html"))
+aictab.lead %>% 
+  gtsave(filename = here("outputs/tables/aictab.lead.html"))
 
-glmm.gsize %>% 
+glmm.lead.tbl %>% 
   as_gt() %>%
-  gtsave(filename = here("outputs/tables/glmm.gsize.html"))
+  gtsave(filename = here("outputs/tables/aictab.lead.html"))
 
-glmm.gsize %>% 
+glmm.lead.tbl %>% 
   as_gt() %>%
   gtsave(filename = here("outputs/tables/glmm.gsize.docx"))
 
@@ -248,9 +248,11 @@ p2 = df.compo.V %>%
 var.compo = p1 + p2 +plot_annotation(tag_levels = 'A')
 var.compo
 
-ggsave(filename = "outputs/figs/var.compo.lead.jpeg", var.compo, 
+save(var.compo, file = here("outputs/ggplot/var.compo.lead.rdata"))
+
+ggsave(filename = here("outputs/figs/var.compo.lead.jpeg"), var.compo, 
        width = 12, height = 8)
-ggsave(filename = "outputs/figs/var.compo.lead.pdf", var.compo, 
+ggsave(filename = here("outputs/figs/var.compo.lead.pdf"), var.compo, 
        width = 12, height = 8)
 
 #### Table ----
@@ -685,7 +687,6 @@ rpt.r2.i = rpt(leader ~ sex_f + maturity + (1|id),
                ratio = T)
 saveRDS(rpt.r2.ni, here("outputs/mods/rpt.r2.ni.rds"))
 saveRDS(rpt.r2.i, here("outputs/mods/rpt.r2.i.rds"))
-```
 
 #### Plot the model estimates ----
 Vi_ni = rpt.V.ni$R_boot_link$id
@@ -803,3 +804,20 @@ tbl_delta_r2_injury = describe_posterior(df.inj.2*100) %>%
     "delta_r2_VR" ~ "∆VR")
 
 tbl_delta_r2_sex; tbl_delta_r2_maturity; tbl_delta_r2_injury
+
+#### Export tables ----
+tbl_delta_r2_sex %>% 
+  gtsave(filename = here("outputs/tables/tbl_delta_r2_sex.html"))
+tbl_delta_r2_sex %>% 
+  gtsave(filename = here("outputs/tables/tbl_delta_r2_sex.docx"))
+
+tbl_delta_r2_maturity %>% 
+  gtsave(filename = here("outputs/tables/tbl_delta_r2_maturity.html"))
+tbl_delta_r2_maturity %>% 
+  gtsave(filename = here("outputs/tables/tbl_delta_r2_maturity.docx"))
+
+tbl_delta_r2_injury %>% 
+  gtsave(filename = here("outputs/tables/tbl_delta_r2_injury.html"))
+tbl_delta_r2_injury %>% 
+  gtsave(filename = here("outputs/tables/tbl_delta_r2_injury.docx"))
+
