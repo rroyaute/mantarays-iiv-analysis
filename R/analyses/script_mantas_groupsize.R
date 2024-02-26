@@ -190,7 +190,8 @@ p1 = df.compo.r2 %>%
   theme(legend.position = c(.9, .5),
         legend.title = element_blank(), 
         axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank())
+        axis.ticks.x = element_blank()) +
+  ggtitle("Group size")
 
 p2 = df.compo.V %>% 
   ggplot(aes(y = v.compo, x = var, fill = v.compo)) +
@@ -205,9 +206,9 @@ p2 = df.compo.V %>%
   theme_bw(18) +
   theme(legend.position = "none")
 
-var.compo = p1 + p2 +plot_annotation(tag_levels = 'A')
+var.compo = p1 + p2
 var.compo
-save(var.compo, file = here("outputs/ggplot/var.compo.gsize.rdata"))
+saveRDS(var.compo, file = here("outputs/ggplot/var.compo.gsize.rds"))
 
 ggsave(filename = here("outputs/figs/var.compo.gsize.jpeg"), var.compo, 
        width = 12, height = 8)
