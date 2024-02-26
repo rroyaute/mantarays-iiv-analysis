@@ -109,9 +109,8 @@ glmm.solo.v.g = glmm.solo.v.g.full %>%
 glmm.solo.v.g
 
 # Plot marginal effects in cleaner way
-glmm.pred <- predict_response(glmm.solo.v.g.full)
-plot(glmm.pred, facets = T, show_data = T)
-
+glmm.pred <- plot(ggeffect(glmm.solo.v.g.full, show_data = T))
+glmm.pred
 
 #### Export tables ----
 aictab.solo.v.g = full_join(aictab.solo.v.g, data.frame(R2.table)) %>%
@@ -143,7 +142,7 @@ rpt.V.solo.v.g = rpt(group ~  nyear + site + current + time_ht_sc +
                        plankton + no_mantas_sc + (1|id), 
                   grname = c("id", "Fixed", "Residual"), 
                   datatype = c("Binary"), 
-                  npermut = 1000,
+                  # npermut = 1000,
                   parallel = T, 
                   data = df.tot,
                   ratio = F)
@@ -153,10 +152,35 @@ rpt.r2.solo.v.g = rpt(group ~  nyear + site + current + time_ht_sc +
                         plankton + no_mantas_sc + (1|id), 
                    grname = c("id", "Fixed", "Residual"), 
                    datatype = c("Binary"), 
-                   npermut = 1000, 
+                   # npermut = 1000, 
                    parallel = T, 
                    data = df.tot,
                    ratio = T)
+saveRDS(rpt.r2.solo.v.g, file = here("outputs/mods/rpt.r2.solo.v.g.rds"))
+
+# Update for permutation test
+rpt.V.solo.v.g = rpt(group ~  nyear + site + current + time_ht_sc +
+                       plankton + no_mantas_sc + (1|id), 
+                     grname = c("id", "Fixed", "Residual"), 
+                     datatype = c("Binary"), 
+                     npermut = 1000,
+                     parallel = T, 
+                     data = df.tot,
+                     ratio = F, 
+                     rptObj = rpt.V.solo.v.g, 
+                     update = T)
+saveRDS(rpt.V.solo.v.g, file = here("outputs/mods/rpt.V.solo.v.g.rds"))
+
+rpt.r2.solo.v.g = rpt(group ~  nyear + site + current + time_ht_sc +
+                        plankton + no_mantas_sc + (1|id), 
+                      grname = c("id", "Fixed", "Residual"), 
+                      datatype = c("Binary"), 
+                      # npermut = 1000, 
+                      parallel = T, 
+                      data = df.tot,
+                      ratio = T, 
+                      rptObj = rpt.r2.solo.v.g, 
+                      update = T)
 saveRDS(rpt.r2.solo.v.g, file = here("outputs/mods/rpt.r2.solo.v.g.rds"))
 
 

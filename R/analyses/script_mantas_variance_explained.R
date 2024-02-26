@@ -72,71 +72,6 @@ p1 = df.R2 %>%
   summarise(R2 = mean(R2)) %>% 
   ggplot(aes(y = R2, x = trait, fill = type)) +
   geom_bar(position = "fill", 
-           stat = "identity", width = .02) +
-  scale_fill_wsj(labels = c(
-    bquote(V[fe]), 
-    bquote(V[i]),
-    bquote(V[R]))) +
-  xlab("Variance components") +
-  ylab("Variance explained (proportion)") +
-  theme_bw(18) + 
-  theme(legend.position = c(.9, .5),
-        legend.title = element_blank(), 
-        axis.text.x = element_blank(), 
-        axis.ticks.x = element_blank())
-
-p2 = df.Var %>% 
-  ggplot(aes(y = type, x = var, fill = type)) +
-  stat_halfeye() + 
-  scale_fill_wsj() +
-  facet_wrap(~trait, ncol = 1) +
-  scale_y_discrete(labels = c(
-    bquote(V[fe]), 
-    bquote(V[i]),
-    bquote(V[R]))) +
-  xlab("Variance") +
-  ylab("Variance component") +
-  theme_bw(18) +
-  theme(legend.position = "none") +
-  ggtitle()
-
-var.compo = p1 + p2
-var.compo
-saveRDS(var.compo, file = here("outputs/ggplot/var.compo.all.rds"))
-
-ggsave(filename = here("outputs/figs/var.compo.all.jpeg"), var.compo)
-ggsave(filename = here("outputs/figs/var.compo.all.g.pdf"), var.compo)
-
-
-# test ----
-df.R2 = data.frame(
-  R2 = c(#r2_Vi.gfor, r2_Vfe.gfor, r2_VR.gfor,
-         r2_Vi.gisze, r2_Vfe.gisze, r2_VR.gisze,
-         r2_Vi.lead, r2_Vfe.lead, r2_VR.lead),
-  trait = c(#rep("Group foraging", 3000),
-            rep("Group size", 3000),
-            rep("Leadership", 3000)),
-  type = c(rep(c(rep("Vi", 1000),
-               rep("Vfe", 1000),
-               rep("VR", 1000)), 2)))
-
-df.Var = data.frame(
-  var = c(#Vi.gfor, Vfe.gfor, VR.gfor,
-          Vi.gisze, Vfe.gisze, VR.gisze,
-          Vi.lead, Vfe.lead, VR.lead),
-  trait = c(#rep("Group foraging", 3000),
-            rep("Group size", 3000),
-            rep("Leadership", 3000)),
-  type = c(rep(c(rep("Vi", 1000),
-               rep("Vfe", 1000),
-               rep("VR", 1000)), 2)))
-
-
-p1 = df.R2 %>% 
-  group_by(type, trait) %>% 
-  summarise(R2 = mean(R2)) %>% 
-  ggplot(aes(y = R2, x = trait, fill = type)) +
-  geom_bar(position = "fill", 
            stat = "identity", width = .2) +
   scale_fill_wsj(labels = c(
     bquote(V[fe]), 
@@ -146,7 +81,9 @@ p1 = df.R2 %>%
   ylab("Variance explained (proportion)") +
   theme_bw(18) + 
   theme(legend.position = c(.9, .5),
-        legend.title = element_blank())
+        legend.title = element_blank(),
+        legend.text = element_text(size=12),
+        legend.key.size = unit(0.25, "cm"))
 
 p2 = df.Var %>% 
   ggplot(aes(y = type, x = var, fill = type)) +
@@ -162,4 +99,10 @@ p2 = df.Var %>%
   theme_bw(18) +
   theme(legend.position = "none")
 
-p1 + p2
+var.compo = p1 + p2 + plot_layout(widths = c(2, 1))
+var.compo
+
+saveRDS(var.compo, file = here("outputs/ggplot/var.compo.all.rds"))
+
+ggsave(filename = here("outputs/figs/var.compo.all.jpeg"), var.compo, width = 12)
+ggsave(filename = here("outputs/figs/var.compo.all.g.pdf"), var.compo, width = 12)
