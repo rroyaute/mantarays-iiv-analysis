@@ -104,7 +104,7 @@ rpt.V.solo.v.g = rpt(group ~  nyear + current_n + time_ht_sc +
                        plankton + no_mantas_sc + (1|id) + (1|site), 
                      grname = c("id", "site", "Fixed", "Residual"), 
                      datatype = c("Binary"), 
-                     # npermut = 1000,
+                     npermut = 1000,
                      parallel = T, 
                      data = df.tot,
                      ratio = F)
@@ -113,7 +113,7 @@ rpt.r2.solo.v.g = rpt(group ~  nyear + current_n + time_ht_sc +
                         plankton + no_mantas_sc + (1|id) + (1|site),
                       grname = c("id", "site", "Fixed", "Residual"), 
                       datatype = c("Binary"), 
-                      # npermut = 1000, 
+                      npermut = 1000, 
                       parallel = T, 
                       data = df.tot,
                       ratio = T)
