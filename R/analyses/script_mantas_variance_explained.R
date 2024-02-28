@@ -74,9 +74,9 @@ p1 = df.R2 %>%
   geom_bar(position = "fill", 
            stat = "identity", width = .2) +
   scale_fill_wsj(labels = c(
-    bquote(V[fe]), 
-    bquote(V[i]),
-    bquote(V[R]))) +
+    bquote(R[fe]^2), 
+    bquote(R[i]^2),
+    bquote(R[R]^2))) +
   xlab("") +
   ylab("Variance explained (proportion)") +
   theme_bw(18) + 
@@ -99,10 +99,10 @@ p2 = df.Var %>%
   theme_bw(18) +
   theme(legend.position = "none")
 
-var.compo = p1 + p2 + plot_layout(widths = c(2, 1))
+var.compo = p1 + p2 + plot_layout(widths = c(1.5, 1))
 var.compo
 
 saveRDS(var.compo, file = here("outputs/ggplot/var.compo.all.rds"))
 
 ggsave(filename = here("outputs/figs/var.compo.all.jpeg"), var.compo, width = 12)
-ggsave(filename = here("outputs/figs/var.compo.all.g.pdf"), var.compo, width = 12)
+ggsave(filename = here("outputs/figs/var.compo.all.pdf"), var.compo, width = 12)

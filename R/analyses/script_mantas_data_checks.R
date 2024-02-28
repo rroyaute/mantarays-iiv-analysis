@@ -6,6 +6,9 @@ library(patchwork); library(gt)
 df.tot = read.csv(here("data/data-raw/Manta Data_Annie.csv"), 
                     header=TRUE, sep=",", na.strings="NA", dec=".",
                     strip.white=TRUE)
+df.group = read.csv(here("data/data-raw/group_rp.csv"), 
+                  header=TRUE, sep=",", na.strings="NA", dec=".",
+                  strip.white=TRUE)
 
 ## Data summaries ----
 
@@ -21,3 +24,27 @@ df.group.2 %>%
 hist(df.group$group_size)
 hist(df.group.2$group_size)
 
+boxplot(group_size ~ plankton, df.group)
+
+ggplot(df.group, aes(x = plankton, y = group)) +
+  geom_bar(stat = "identity", width = .2) 
+
+ggplot(df.group, aes(x = plankton, y = group)) +
+  geom_bar(stat = "identity", width = .2) +
+  facet_wrap(~site)
+
+ggplot(df.tot, aes(x = plankton, y = group)) +
+  geom_bar(stat = "identity", width = .2) 
+
+ggplot(df.tot, aes(x = plankton, y = group)) +
+  geom_bar(stat = "identity", width = .2) +
+  facet_wrap(~site)
+
+ggplot(df.tot, aes(x = as.factor(site), y = current)) +
+  geom_boxplot()
+
+df.tot %>% ggplot(aes(y = no_mantas, x = current)) +
+  geom_point()
+
+df.tot %>% ggplot(aes(y = group, x = plankton)) +
+  geom_point(alpha = .02)

@@ -8,7 +8,7 @@ library(tidybayes); library(gt); library(AICcmodavg)
 # verify time to ht column
 
 ## Data import ----
-df.group = read.csv(here("data/data-clean/group_rp.csv"), 
+df.group = read.csv(here("data/data-raw/group_rp.csv"), 
                     header=TRUE, sep=",", na.strings="NA", dec=".",
                     strip.white=TRUE)
 df.group$id = as.factor(df.group$id)
@@ -86,6 +86,8 @@ R2.table = data.frame(
          R2.bio.ext$R2_marginal,
          R2.full$R2_marginal))
 
+saveRDS(R2.full, here("outputs/mods/r2.gsize.rds")) 
+
 #### Effect plots and coefficient table for full model ----
 check_model(glmm.gsize.full)
 
@@ -104,7 +106,7 @@ glmm.gsize = glmm.gsize.full %>%
 glmm.gsize
 
 #### Export tables ----
-aictab.gsize = full_join(aictab.gsize, data.frame(R2.table)) %>%
+aictab.gsize = full_join(aictab.gsize, R2.table) %>%
   gt() %>%
   fmt_number(decimals = 2) %>% 
   cols_label(Delta_AIC = "∆AIC")
@@ -159,7 +161,6 @@ r2_VR = rpt.r2.gsize$R_boot_link$Residual
 Vi = rpt.V.gsize$R_boot_link$id
 Vfe = rpt.V.gsize$R_boot_link$Fixed
 VR = rpt.V.gsize$R_boot_link$Residual
-
 
 df.compo.r2 = data.frame(r2_Vi = r2_Vi,
                          r2_Vfe = r2_Vfe,
@@ -216,6 +217,9 @@ ggsave(filename = here("outputs/figs/var.compo.gsize.pdf"), var.compo,
        width = 12, height = 8)
 
 #### Table ----
+# Conditional R2
+describe_posterior((r2_Vi+r2_Vfe)/(r2_Vi+r2_Vfe+r2_VR)*100)
+
 Var.tbl = data.frame(Vi = Vi,
            Vfe = Vfe,
            VR = VR) %>%

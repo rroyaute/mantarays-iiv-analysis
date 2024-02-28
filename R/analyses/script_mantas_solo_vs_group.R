@@ -49,10 +49,16 @@ glmm.solo.v.g.abio = glmer(group ~  nyear + site + current + time_ht_sc + (1|id)
 glmm.solo.v.g.bio.ext = glmer(group ~  plankton + no_mantas_sc + (1|id), 
                            family = "binomial",
                            df.tot)
-glmm.solo.v.g.full = glmer(group ~  nyear + site + current + time_ht_sc +
-                          plankton + no_mantas_sc + (1|id), 
-                        family = "binomial",
-                        df.tot)
+
+glmm.solo.v.g.full = glmer(group ~  nyear + 
+                             site + 
+                             current + 
+                             time_ht_sc +
+                             plankton + 
+                             no_mantas_sc + 
+                             (1|id), 
+                           family = "binomial",
+                           df.tot)
 
 # Save models 
 saveRDS(glmm.solo.v.g.null, file = here("outputs/mods/glmm.solo.v.g.null.rds"))
@@ -83,6 +89,8 @@ R2.null = r2_nakagawa(glmm.solo.v.g.null)
 R2.abio = r2_nakagawa(glmm.solo.v.g.abio)
 R2.bio.ext = r2_nakagawa(glmm.solo.v.g.bio.ext)
 R2.full = r2_nakagawa(glmm.solo.v.g.full)
+
+saveRDS(R2.full, here("outputs/mods/r2.solo.v.g.rds"))
 
 R2.table = data.frame(
   Model = c("Null", "Abiotic","Biotic (external)", "Abiotic + Biotic (external)"),
@@ -250,6 +258,9 @@ ggsave(filename = here("outputs/figs/var.compo.solo.v.g.pdf"), var.compo,
        width = 12, height = 8)
 
 #### Table ----
+# Conditional R2
+describe_posterior((r2_Vi+r2_Vfe)/(r2_Vi+r2_Vfe+r2_VR)*100)
+
 Var.tbl = data.frame(Vi = Vi,
                      Vfe = Vfe,
                      VR = VR) %>%

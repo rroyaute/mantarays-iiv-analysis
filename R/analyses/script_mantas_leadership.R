@@ -8,7 +8,7 @@ library(tidybayes); library(AICcmodavg); library(gt)
 # Merge results with group size when appropriate
 
 ## Data import ----
-df.group = read.csv(here("data/data-clean/group_rp.csv"), 
+df.group = read.csv(here("data/data-raw/group_rp.csv"), 
                     header=TRUE, sep=",", na.strings="NA", dec=".",
                     strip.white=TRUE)
 df.group$id = as.factor(df.group$id)
@@ -110,7 +110,7 @@ Model.list[[3]]=glmm.lead.state.ext
 Model.list[[4]]=glmm.lead
 
 
-names(Model.list)=c("Null", "Internal","External", "Internal + External")
+names(Model.list) = c("Null", "Internal","External", "Internal + External")
 # Calculate AIC values and delta_AIC by setting second.ord = F 
 #(returns AICc otherwise, which are mostly used with limited samples sizes)
 aictab.lead = data.frame(aictab(Model.list, second.ord = F)) %>% 
@@ -123,7 +123,7 @@ R2.bio.ext = r2_nakagawa(glmm.lead.state.ext)
 R2.full = r2_nakagawa(glmm.lead)
 
 R2.table = data.frame(
-  Model = c("Null", "Abiotic","Biotic (external)", "Abiotic + Biotic (external)"),
+  Model = c("Null", "Internal","External", "Internal + External"),
   R2 = c(R2.null$R2_marginal,
          R2.abio$R2_marginal,
          R2.bio.ext$R2_marginal,
@@ -147,7 +147,7 @@ glmm.lead.tbl = glmm.lead %>%
 glmm.lead.tbl
 
 #### Export tables ----
-aictab.lead = full_join(aictab.lead, data.frame(R2.table)) %>%
+aictab.lead = full_join(aictab.lead, R2.table) %>%
   gt() %>%
   fmt_number(decimals = 2) %>% 
   cols_label(Delta_AIC = "∆AIC")
@@ -155,13 +155,16 @@ aictab.lead = full_join(aictab.lead, data.frame(R2.table)) %>%
 aictab.lead %>% 
   gtsave(filename = here("outputs/tables/aictab.lead.html"))
 
-glmm.lead.tbl %>% 
-  as_gt() %>%
-  gtsave(filename = here("outputs/tables/aictab.lead.html"))
+aictab.lead %>% 
+  gtsave(filename = here("outputs/tables/aictab.lead.docx"))
 
 glmm.lead.tbl %>% 
   as_gt() %>%
-  gtsave(filename = here("outputs/tables/glmm.gsize.docx"))
+  gtsave(filename = here("outputs/tables/glmm.lead.html"))
+
+glmm.lead.tbl %>% 
+  as_gt() %>%
+  gtsave(filename = here("outputs/tables/glmm.lead.docx"))
 
 
 
@@ -221,9 +224,9 @@ p1 = df.compo.r2 %>%
   geom_bar(position = "fill", 
            stat = "identity", width = .02) +
   scale_fill_wsj(labels = c(
-    bquote(V[fe]), 
-    bquote(V[i]),
-    bquote(V[R]))) +
+    bquote(R[fe]^2), 
+    bquote(R[i]^2),
+    bquote(R[R]^2))) +
   xlab("Variance components") +
   ylab("Variance explained (proportion)") +
   theme_bw(18) + 
@@ -257,6 +260,10 @@ ggsave(filename = here("outputs/figs/var.compo.lead.pdf"), var.compo,
        width = 12, height = 8)
 
 #### Table ----
+# Conditional R2
+describe_posterior((r2_Vi+r2_Vfe)/(r2_Vi+r2_Vfe+r2_VR)*100)
+
+
 Var.tbl = data.frame(Vi = Vi,
                      Vfe = Vfe,
                      VR = VR) %>%
@@ -436,9 +443,9 @@ p1 = df.sex %>%
   geom_bar(position = "fill", 
            stat = "identity", width = .2) +
   scale_fill_wsj(labels = c(
-    bquote(V[fe]), 
-    bquote(V[i]),
-    bquote(V[R]))) +
+    bquote(R[fe]^2), 
+    bquote(R[i]^2),
+    bquote(R[R]^2))) +
   ylab("Variance explained (proportion)") +
   theme_bw(18) + 
   labs(fill = "") +
@@ -449,7 +456,7 @@ delta.vi.r = df.sex.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") +
-  xlab(bquote(Delta[V[i]])) +
+  xlab(bquote(Delta[R[i]^2])) +
   ylab("Density") +
   theme_bw(18) +
   ggtitle("Difference in variance explained (%)")
@@ -459,7 +466,7 @@ delta.vfe.r = df.sex.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") + 
-  xlab(bquote(Delta[V[fe]])) +
+  xlab(bquote(Delta[R[fe]^2])) +
   ylab("Density") +
   theme_bw(18)
 
@@ -468,7 +475,7 @@ delta.vr.r = df.sex.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") + 
-  xlab(bquote(Delta[V[R]])) +
+  xlab(bquote(Delta[R[R]^2])) +
   ylab("Density") +
   theme_bw(18)
 
@@ -581,9 +588,9 @@ p1 = df.mat %>%
   geom_bar(position = "fill", 
            stat = "identity", width = .2) +
   scale_fill_wsj(labels = c(
-    bquote(V[fe]), 
-    bquote(V[i]),
-    bquote(V[R]))) +
+    bquote(R[fe]^2), 
+    bquote(R[i]^2),
+    bquote(R[R]^2))) +
   ylab("Variance explained (proportion)") +
   theme_bw(18) + 
   labs(fill = "") +
@@ -594,7 +601,7 @@ delta.vi.r = df.mat.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") +
-  xlab(bquote(Delta[V[i]])) +
+  xlab(bquote(Delta[R[i]^2])) +
   ylab("Density") +
   theme_bw(18) +
   ggtitle("Difference in variance explained (%)")
@@ -604,7 +611,7 @@ delta.vfe.r = df.mat.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") + 
-  xlab(bquote(Delta[V[fe]])) +
+  xlab(bquote(Delta[R[fe]^2])) +
   ylab("Density") +
   theme_bw(18)
 
@@ -613,7 +620,7 @@ delta.vr.r = df.mat.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") + 
-  xlab(bquote(Delta[V[R]])) +
+  xlab(bquote(Delta[R[R]^2])) +
   ylab("Density") +
   theme_bw(18)
 
@@ -727,9 +734,9 @@ p1 = df.inj %>%
   geom_bar(position = "fill", 
            stat = "identity", width = .2) +
   scale_fill_wsj(labels = c(
-    bquote(V[fe]), 
-    bquote(V[i]),
-    bquote(V[R]))) +
+    bquote(R[fe]^2), 
+    bquote(R[i]^2),
+    bquote(R[R]^2))) +
   ylab("Variance explained (proportion)") +
   theme_bw(18) + 
   labs(fill = "") +
@@ -740,7 +747,7 @@ delta.vi.r = df.inj.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") +
-  xlab(bquote(Delta[V[i]])) +
+  xlab(bquote(Delta[R[i]^2])) +
   ylab("Density") +
   theme_bw(18) +
   ggtitle("Difference in variance explained (%)")
@@ -750,7 +757,7 @@ delta.vfe.r = df.inj.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") + 
-  xlab(bquote(Delta[V[fe]])) +
+  xlab(bquote(Delta[R[fe]^2])) +
   ylab("Density") +
   theme_bw(18)
 
@@ -759,7 +766,7 @@ delta.vr.r = df.inj.2 %>%
   stat_halfeye(alpha = .6) + 
   geom_vline(xintercept = 0, 
              linetype = "dashed") + 
-  xlab(bquote(Delta[V[R]])) +
+  xlab(bquote(Delta[R[R]^2])) +
   ylab("Density") +
   theme_bw(18)
 
