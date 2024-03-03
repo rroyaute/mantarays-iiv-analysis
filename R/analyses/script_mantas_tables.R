@@ -143,7 +143,7 @@ tbl.glmm.solo.v.g.full = glmm.solo.v.g.full %>%
   add_n(location = "level")
 # Note footnotes and random effect p-values to be added manually
 # Report random effect p-value
-rpt.V.solo.v.g$P$P_permut_link
+rpt.V.solo.v.g.full$P$P_permut_link
 
 
 ## Group size ----
@@ -173,7 +173,7 @@ tbl.glmm.gsize.full = glmm.gsize.full %>%
   add_n(location = "level")
 # Note footnotes and random effect p-values to be added manually
 # Report random effect p-value
-rpt.V.gsize$P$P_permut_link
+rpt.V.gsize.full$P$P_permut_link
 
 ## Group leadership ----
 labs = list(
@@ -201,7 +201,7 @@ tbl.glmm.lead.full = glmm.lead.full %>%
   add_n(location = "level")
 # Note footnotes and random effect p-values to be added manually
 # Report random effect p-value
-rpt.V.lead$P$P_permut_link
+rpt.V.lead.full$P$P_permut_link
 
 
 ## Combine and export in 1 table ----

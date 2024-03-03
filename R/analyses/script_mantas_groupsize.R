@@ -4,6 +4,9 @@ library(marginaleffects);  library(ggeffects);  library(rptR)
 library(gtsummary); library(ggthemes); library(patchwork)
 library(tidybayes); library(gt); library(AICcmodavg)
 
+# Set seed for reproducibility
+set.seed(42)
+
 # What explains variation in group leadership?
 # Data import ----
 df.group = read.csv(here("data/data-raw/group_rp.csv"), 
@@ -17,10 +20,6 @@ df.group$maturity = as.factor(df.group$maturity)
 df.group$plankton = as.factor(df.group$plankton)
 df.group$shark_bite = as.factor(df.group$shark_bite)
 df.group$anthropogenic = as.factor(df.group$anthropogenic)
-
-# Transform Time columns centered aroun 12:00pm expressed in hours
-df.group$time_cen = hm(df.group$time)
-df.group$time_cen = as.numeric(df.group$time_cen-hours(12))/3600
 
 # Transform Number of mantas columns scaled to sd units
 df.group$no_mantas_sc = as.numeric(scale(df.group$no_mantas))

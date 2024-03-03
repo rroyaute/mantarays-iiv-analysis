@@ -3,6 +3,10 @@ library(kableExtra); library(lme4); library(effects)
 library(marginaleffects);  library(ggeffects);  library(rptR)
 library(gtsummary); library(ggthemes); library(patchwork)
 library(tidybayes); library(gt); library(AICcmodavg)
+
+# Set seed for reproducibility
+set.seed(42)
+
 # What explains variation in foraging strategies (solo vs. group foraging)? 
 # Data import ----
 df.tot = read.csv(here("data/data-raw/Manta Data_Annie.csv"), 
@@ -81,7 +85,7 @@ f.solo.v.g_site.full = as.formula(group ~  nyear + current + time_ht_sc +
 ## abio model ----
 rpt.V.solo.v.g_site.abio = rpt(f.solo.v.g_site.abio, 
                        grname = c("id", "site", "Fixed", "Residual"), 
-                       datatype = c("Poisson"), 
+                       datatype = c("Binary"), 
                        npermut = 1000,
                        parallel = T, 
                        data = df.tot,
@@ -90,7 +94,7 @@ saveRDS(rpt.V.solo.v.g_site.abio, file = here("outputs/mods/rpt.V.solo.v.g_site.
 
 rpt.r2.solo.v.g_site.abio = rpt(f.solo.v.g_site.abio, 
                         grname = c("id", "site", "Fixed", "Residual"), 
-                        datatype = c("Poisson"), 
+                        datatype = c("Binary"), 
                         npermut = 1000, 
                         parallel = T, 
                         data = df.tot,
@@ -100,7 +104,7 @@ saveRDS(rpt.r2.solo.v.g_site.abio, file = here("outputs/mods/rpt.r2.solo.v.g_sit
 ## bio model ----
 rpt.V.solo.v.g_site.bio = rpt(f.solo.v.g_site.bio, 
                       grname = c("id", "site", "Fixed", "Residual"), 
-                      datatype = c("Poisson"), 
+                      datatype = c("Binary"), 
                       npermut = 1000,
                       parallel = T, 
                       data = df.tot,
@@ -109,7 +113,7 @@ saveRDS(rpt.V.solo.v.g_site.bio, file = here("outputs/mods/rpt.V.solo.v.g_site.b
 
 rpt.r2.solo.v.g_site.bio = rpt(f.solo.v.g_site.bio, 
                        grname = c("id", "site", "Fixed", "Residual"), 
-                       datatype = c("Poisson"), 
+                       datatype = c("Binary"), 
                        npermut = 1000, 
                        parallel = T, 
                        data = df.tot,
@@ -119,7 +123,7 @@ saveRDS(rpt.r2.solo.v.g_site.bio, file = here("outputs/mods/rpt.r2.solo.v.g_site
 ## full model ----
 rpt.V.solo.v.g_site.full = rpt(f.solo.v.g_site.full, 
                        grname = c("id", "site", "Fixed", "Residual"), 
-                       datatype = c("Poisson"), 
+                       datatype = c("Binary"), 
                        npermut = 1000,
                        parallel = T, 
                        data = df.tot,
@@ -128,7 +132,7 @@ saveRDS(rpt.V.solo.v.g_site.full, file = here("outputs/mods/rpt.V.solo.v.g_site.
 
 rpt.r2.solo.v.g_site.full = rpt(f.solo.v.g_site.full, 
                         grname = c("id", "site", "Fixed", "Residual"), 
-                        datatype = c("Poisson"), 
+                        datatype = c("Binary"), 
                         npermut = 1000, 
                         parallel = T, 
                         data = df.tot,

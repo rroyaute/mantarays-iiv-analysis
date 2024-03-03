@@ -4,6 +4,9 @@ library(marginaleffects);  library(ggeffects);  library(rptR)
 library(gtsummary); library(ggthemes); library(patchwork)
 library(tidybayes); library(AICcmodavg); library(gt)
 
+# Set seed for reproducibility
+set.seed(42)
+
 # What explains variation in group leadership?
 # Data import ----
 df.group = read.csv(here("data/data-raw/group_rp.csv"), 
@@ -60,7 +63,7 @@ f.lead.full = as.formula(leader ~  sex_f + maturity +
 ## status model ----
 rpt.V.lead.status = rpt(f.lead.status, 
                        grname = c("id", "Fixed", "Residual"), 
-                       datatype = c("Poisson"), 
+                       datatype = c("Binary"), 
                        npermut = 1000,
                        parallel = T, 
                        data = df.group,
@@ -69,7 +72,7 @@ saveRDS(rpt.V.lead.status, file = here("outputs/mods/rpt.V.lead.status.rds"))
 
 rpt.r2.lead.status = rpt(f.lead.status, 
                         grname = c("id", "Fixed", "Residual"), 
-                        datatype = c("Poisson"), 
+                        datatype = c("Binary"), 
                         npermut = 1000, 
                         parallel = T, 
                         data = df.group,
@@ -79,7 +82,7 @@ saveRDS(rpt.r2.lead.status, file = here("outputs/mods/rpt.r2.lead.status.rds"))
 ## injury state model ----
 rpt.V.lead.inj.state = rpt(f.lead.inj.state, 
                       grname = c("id", "Fixed", "Residual"), 
-                      datatype = c("Poisson"), 
+                      datatype = c("Binary"), 
                       npermut = 1000,
                       parallel = T, 
                       data = df.group,
@@ -88,7 +91,7 @@ saveRDS(rpt.V.lead.inj.state, file = here("outputs/mods/rpt.V.lead.inj.state.rds
 
 rpt.r2.lead.inj.state = rpt(f.lead.inj.state, 
                        grname = c("id", "Fixed", "Residual"), 
-                       datatype = c("Poisson"), 
+                       datatype = c("Binary"), 
                        npermut = 1000, 
                        parallel = T, 
                        data = df.group,
@@ -98,7 +101,7 @@ saveRDS(rpt.r2.lead.inj.state, file = here("outputs/mods/rpt.r2.lead.inj.state.r
 ## full model ----
 rpt.V.lead.full = rpt(f.lead.full, 
                        grname = c("id", "Fixed", "Residual"), 
-                       datatype = c("Poisson"), 
+                       datatype = c("Binary"), 
                        npermut = 1000,
                        parallel = T, 
                        data = df.group,
@@ -107,7 +110,7 @@ saveRDS(rpt.V.lead.full, file = here("outputs/mods/rpt.V.lead.full.rds"))
 
 rpt.r2.lead.full = rpt(f.lead.full, 
                         grname = c("id", "Fixed", "Residual"), 
-                        datatype = c("Poisson"), 
+                        datatype = c("Binary"), 
                         npermut = 1000, 
                         parallel = T, 
                         data = df.group,

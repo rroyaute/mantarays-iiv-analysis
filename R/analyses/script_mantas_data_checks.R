@@ -12,6 +12,11 @@ df.group = read.csv(here("data/data-raw/group_rp.csv"),
 
 ## Data summaries ----
 
+# Number of foraging events
+length(unique(df.tot$npid))
+length(unique(df.tot$id))
+
+
 # Only group foraging with non unknown individuals
 df.group.2 = df.tot %>% 
   filter(group == 1)
