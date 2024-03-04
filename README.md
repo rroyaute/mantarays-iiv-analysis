@@ -14,7 +14,10 @@
          - `script_mantas_tables` code for reproducing tables from the article
          - `script_mantas_figures` code for reproducing figures from the article
 - `outputs/` All outputs of code
-  - `figs/` Figures
+  - `mods` Statistical models stored as .rds objects
+  - `tables` Tables in html and docx formats
+      - `tables finale` formated tables
+  - `figs/` Figures in jpeg and pdf formats
 - `quarto/` Code for reproducible Quarto report
 - `docs` reproducible reports in html and pdf formats
  
