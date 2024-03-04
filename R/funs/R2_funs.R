@@ -66,4 +66,22 @@ V.dist = function(Vi, Vsite, Vfe, VR){
   return(V.df)
 }
 
+# Marginal and conditional repatability summaries from rptR distribution
+R2_m_c.dist = function(Vi, Vsite, Vfe, VR){
+  Vtot = ifelse(is.na(Vsite) == T,
+                Vi + Vfe + VR,
+                Vi + Vsite + Vfe + VR)
+  Vrand = ifelse(is.na(Vsite) == T,
+                 Vi,
+                 Vi + Vsite)
+  
+  R2_m_c = data.frame(
+    R2_marg = Vfe/Vtot * 100,
+    R2_cond = (Vfe + Vrand)/Vtot * 100)
+  
+  
+  R2.df = describe_posterior(R2_m_c, )
+  
+  return(R2.df)
+}
 

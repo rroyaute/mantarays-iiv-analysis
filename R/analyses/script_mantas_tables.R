@@ -78,6 +78,14 @@ R2_marg.solo.v.g.bio = R2_marg_fun.point.est(Vi = rpt.V.solo.v.g.bio$R$id[2],
                                     Vfe = rpt.V.solo.v.g.bio$R$Fixed[2],
                                     VR = rpt.V.solo.v.g.bio$R$Residual[2])
 
+# Marginal and Conditional R2 with CIs for inclusion in text
+R2_cond.solo.v.g.full*100 # Point estimate
+R2_marg.solo.v.g.full*100 # Point estimate
+R2_m_c.dist(Vi = rpt.V.solo.v.g.full$R_boot_link$id,
+            Vsite = rpt.V.solo.v.g.full$R_boot_link$site,
+            Vfe = rpt.V.solo.v.g.full$R_boot_link$Fixed,
+            VR = rpt.V.solo.v.g.full$R_boot_link$Residual)
+
 ## Group size ----
 # Only need full model here
 R2_cond.gsize.full = R2_cond_fun.point.est(Vi = rpt.V.gsize.full$R$id[2],
@@ -98,6 +106,14 @@ R2_marg.gsize.bio = R2_marg_fun.point.est(Vi = rpt.V.gsize.bio$R$id[2],
                                    Vfe = rpt.V.gsize.bio$R$Fixed[2],
                                    VR = rpt.V.gsize.bio$R$Residual[2])
 
+# Marginal and Conditional R2 with CIs for inclusion in text
+R2_cond.gsize.full*100 # Point estimate
+R2_marg.gsize.full*100 # Point estimate
+R2_m_c.dist(Vi = rpt.V.gsize.full$R_boot_link$id,
+            Vsite = rpt.V.gsize.full$R_boot_link$site,
+            Vfe = rpt.V.gsize.full$R_boot_link$Fixed,
+            VR = rpt.V.gsize.full$R_boot_link$Residual)
+
 ## Group leadership ----
 # Only need full model here
 R2_cond.lead.full = R2_cond_fun.point.est(Vi = rpt.V.lead.full$R$id[2],
@@ -117,6 +133,14 @@ R2_marg.lead.inj.state = R2_marg_fun.point.est(Vi = rpt.V.lead.inj.state$R$id[2]
                                    Vsite = NA,
                                    Vfe = rpt.V.lead.inj.state$R$Fixed[2],
                                    VR = rpt.V.lead.inj.state$R$Residual[2])
+
+# Marginal and Conditional R2 with CIs for inclusion in text
+R2_cond.lead.full*100 # Point estimate
+R2_marg.lead.full*100 # Point estimate
+R2_m_c.dist(Vi = rpt.V.lead.full$R_boot_link$id,
+            Vsite = NA,
+            Vfe = rpt.V.lead.full$R_boot_link$Fixed,
+            VR = rpt.V.lead.full$R_boot_link$Residual)
 
 # Reproduce model tables ----
 ## Group vs. solo ----
